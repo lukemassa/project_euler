@@ -1,4 +1,4 @@
-## project euler
+## Project Euler
 
 Code for as I progress through https://projecteuler.net/
 
