@@ -1,6 +1,6 @@
 ## project euler
 
-Code for solving https://projecteuler.net/
+Code for as I progress through https://projecteuler.net/
 
 Note that I typically don't save a given solution, only save functions I write as I go that might be useful later.
 
