@@ -5,14 +5,17 @@ import (
 	"log"
 	"math"
 	"math/big"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/exp/constraints"
-	"golang.org/x/exp/slices"
 )
 
 const gridNums = 4
+
+const numElementsPermutation = 4
 
 func fib(nums chan int) {
 	i := 0
@@ -406,13 +409,129 @@ func factorial(n int64) *big.Int {
 	return ret
 }
 
-//func nextStartingAndOffset(starting, offset int) (int, int) {
+func isAbundant[T constraints.Integer](n T) bool {
+	return sum(divisors(n)) > n
+}
 
-//}
+func abundants(max int) {
+	abundantNumbers := NewSet[int]()
+	for i := 0; i <= max; i++ {
+		if isAbundant(i) {
+			abundantNumbers.Add(i)
+		}
+	}
+	sumOfAbundants := make([]int, 0)
+	for i := 1; i < max; i++ {
+		canBeWritten := false
+		for summand := 1; summand <= i/2; summand++ {
+			if !abundantNumbers.Contains(summand) {
+				continue
+			}
+			if !abundantNumbers.Contains(i - summand) {
+				continue
+			}
+			canBeWritten = true
+
+		}
+		if !canBeWritten {
+			fmt.Printf("%d cannot be written as sum of abundant\n", i)
+			sumOfAbundants = append(sumOfAbundants, i)
+		}
+	}
+	fmt.Println(sum(sumOfAbundants))
+	//return false
+}
+
+func BubbleSort[T constraints.Ordered](array []T) []T {
+	for i := 0; i < len(array)-1; i++ {
+		fmt.Println(i)
+		for j := 0; j < len(array)-i-1; j++ {
+			if array[j] > array[j+1] {
+				array[j], array[j+1] = array[j+1], array[j]
+			}
+		}
+	}
+	return array
+}
+
+func nthBiggestElement[T constraints.Ordered](arr []T, n int) T {
+	// Return the n-th largest element in a not-necessarily sorted array
+	sorted := make([]T, len(arr))
+	copy(sorted, arr)
+	start := time.Now()
+	sorted = BubbleSort(sorted)
+	fmt.Printf("%d,%f\n", len(arr), time.Since(start).Seconds())
+	return sorted[len(sorted)-n]
+
+}
+func sortArrAfterPoint(arr []int, k int) []int {
+
+	endPart := arr[k:]
+	sort.Ints(endPart)
+	return append(arr[:k], endPart...)
+}
+func nextPermutation(arr []int) ([]int, bool) {
+	// 012
+	// 021
+	// 102
+	// 120
+	// 201
+	// 210
+
+	// 0123
+	// 0132
+	// 0213
+	// 0231
+	// 0312
+	// 0321
+	// 1023
+
+	// Find the "pivot"
+	n := len(arr)
+	pivot := n - 2
+	for ; pivot > 0; pivot-- {
+
+		if arr[pivot] < arr[pivot+1] {
+			break
+		}
+	}
+	if pivot == -1 {
+		return arr, true
+	}
+	arr = sortArrAfterPoint(arr, pivot+1)
+	swapWithPivot := pivot + 1
+	for ; swapWithPivot < n; swapWithPivot++ {
+		if arr[pivot] < arr[swapWithPivot] {
+			break
+		}
+	}
+	if swapWithPivot == n {
+		return arr, true
+	}
+	arr[pivot], arr[swapWithPivot] = arr[swapWithPivot], arr[pivot]
+	arr = sortArrAfterPoint(arr, pivot+1)
+	return arr, false
+}
+func showPermutations(n int) {
+	arr := make([]int, n)
+	for i := 0; i < n; i++ {
+		arr[i] = i
+	}
+	count := 1
+	for {
+		fmt.Println(count, arr)
+		if count == 1_000_000 {
+			break
+		}
+		tmpArr, done := nextPermutation(arr)
+		arr = tmpArr
+		if done {
+			break
+		}
+		count += 1
+	}
+
+}
 func main() {
-	a := make([]int, 5)
-	a[0] = 1
-	a[1] = 4
-	a[2] = 4
-	fmt.Println(slices.Contains(a, 6))
+	showPermutations(10)
 }
