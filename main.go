@@ -17,12 +17,13 @@ const gridNums = 4
 
 const numElementsPermutation = 4
 
-func fib(nums chan int) {
-	i := 0
-	j := 1
+func fib(nums chan *big.Int) {
+	i := big.NewInt(0)
+	j := big.NewInt(1)
 	for {
-		i, j = j, i+j
 		nums <- j
+		i, j = j, i.Add(j, i)
+
 	}
 
 }
@@ -65,6 +66,9 @@ func divisors[T constraints.Integer](n T) []T {
 }
 
 func isPrime(n int64) bool {
+	if n < 2 {
+		return false
+	}
 	factor := nextFactor(n)
 	return factor == -1
 }
@@ -532,6 +536,283 @@ func showPermutations(n int) {
 	}
 
 }
+
+func unitReciprocalCycles(n int) int {
+	i := 0
+	const runLength = 3
+	seen := make(map[string]int)
+	fmt.Printf("1/%d: ", n)
+	numerator := 1
+	current := ""
+	for {
+		i += 1
+		quotient, remainder := (10*numerator)/n, (10*numerator)%n
+		current = fmt.Sprintf("%s%d", current, quotient)
+		if len(current) > runLength {
+			current = current[1:]
+		}
+		place, found := seen[current]
+		if found {
+			return (i - place)
+		}
+		if len(current) == runLength {
+			seen[current] = i
+		}
+
+		//fmt.Print(current, " ")
+		//fmt.Print(quotient)
+		//fmt.Print(seen)
+		if remainder == 0 {
+			return 0
+		}
+		numerator = remainder
+	}
+}
+func numPrimesPolynomial(a, b int64) int64 {
+	for n := int64(0); ; n++ {
+		val := n*n + a*n + b
+		if val < 2 {
+			return n
+		}
+		if !isPrime(val) {
+			return n
+		}
+	}
+}
+func distinctPowers(maxInt int64) int {
+	sofar := make([]big.Int, 0)
+	one := big.NewInt(1)
+	//min := big.NewInt(2)
+	max := big.NewInt(maxInt)
+
+	for a := big.NewInt(2); a.Cmp(max) != 1; a.Add(a, one) {
+		for b := big.NewInt(2); b.Cmp(max) != 1; b.Add(b, one) {
+			res := big.NewInt(0)
+			res.Exp(a, b, nil)
+			//fmt.Printf("%v ^ %v = %v\n", a, b, res)
+			found := false
+			for i := 0; i < len(sofar); i++ {
+				if sofar[i].Cmp(res) == 0 {
+					found = true
+					break
+				}
+			}
+			if !found {
+				sofar = append(sofar, *res)
+			}
+
+		}
+	}
+	return len(sofar)
+}
+func distinctPowers2(max uint16) int {
+	decomps := make([]DecomposedInteger, max+1)
+	for i := uint16(2); i <= max; i++ {
+		decomps[i] = NewDecomposedInteger(i)
+	}
+	seen := NewSet[DecomposedInteger]()
+	seenChannel := make(chan DecomposedInteger)
+	for a := uint16(2); a <= max; a++ {
+		go func(a uint16) {
+			fmt.Printf("%d/%d\n", a, max)
+			for b := uint16(2); b <= max; b++ {
+				if b%100 == 0 {
+					fmt.Printf("%d is on %d\n", a, b)
+				}
+				res := decomps[a].Pow(b)
+				//fmt.Printf("%v (%v) ^ %v = %v\n", a, decomps[a], b, res)
+				seenChannel <- res
+
+			}
+		}(a)
+	}
+	done := uint16(0)
+	for res := range seenChannel {
+		done += 1
+		if done == (max-1)*(max-1) {
+			break
+		}
+		//fmt.Println(res)
+		seen.Add(res)
+	}
+	close(seenChannel)
+	// Check to see if anything's still writing to the channel
+	time.Sleep(100 * time.Millisecond)
+	return seen.Size()
+}
+
+// How many of the 1 to max numbers were *not*
+// included by smaller powers
+func howManyNew(power, min, max int) int {
+	fmt.Printf("STARTING: power is %d\n", power)
+	alreadyHit := make([]bool, max*power+1)
+	for lowerPower := 1; lowerPower < power; lowerPower++ {
+		//fmt.Println("   sWorking on", lowerPower)
+		for i := 0; i <= max; i++ {
+			alreadyHit[i*lowerPower] = true
+		}
+	}
+	// Pretend values below min were "hit" already
+	for i := 0; i < min; i++ {
+		alreadyHit[i] = true
+	}
+	//fmt.Println(alreadyHit)
+	ret := 0
+	for i := 0; i <= max*power; i += power {
+		//fmt.Printf("  Looking at %d, which is of course %v\n", i, alreadyHit[i])
+		if !alreadyHit[i] {
+			ret += 1
+		}
+	}
+	return ret
+}
+
+func distinctPowers3(max int) int {
+	ret := 0
+	min := 2
+	for i := min; i <= max; i++ {
+		// power := largestPowerOfPrime(int64(i))
+		power := gcdOfPowersOfPrime(int64(i))
+		toAdd := howManyNew(power, min, max)
+		fmt.Printf("%d has power %d, so adding %d\n", i, power, toAdd)
+		ret += toAdd
+
+	}
+	return ret
+}
+
+func largestPowerOfPrime(n int64) int {
+	if n == 12 {
+		return 1
+	}
+	freq := make(map[int64]int)
+	maxPower := 0
+	// Could be sqrt?
+	for i := int64(2); i <= n; i++ {
+		//fmt.Println(n, i)
+		if n%i == 0 {
+			n /= i
+			freq[i] += 1
+			if freq[i] > maxPower {
+				maxPower = freq[i]
+			}
+
+			i = int64(1)
+			continue
+		}
+	}
+	return maxPower
+}
+
+func smallestPowerOfPrime(n int64) int {
+	//if n == 5184 {
+	//	return 1
+	//}
+	freq := make(map[int64]int)
+
+	// Could be sqrt?
+	for i := int64(2); i <= n; i++ {
+		//fmt.Println(n, i)
+		if n%i == 0 {
+			n /= i
+			freq[i] += 1
+
+			i = int64(1)
+			continue
+		}
+	}
+	//fmt.Println(freq)
+	minPower := -1
+	for _, power := range freq {
+		if minPower == -1 || power < minPower {
+			minPower = power
+		}
+	}
+	return minPower
+}
+
+func gcdOfPowersOfPrime(n int64) int {
+	freq := make(map[int64]int)
+
+	// Could be sqrt?
+	for i := int64(2); i <= n; i++ {
+		//fmt.Println(n, i)
+		if n%i == 0 {
+			n /= i
+			freq[i] += 1
+
+			i = int64(1)
+			continue
+		}
+	}
+	powers := make([]int, len(freq))
+	i := 0
+	for _, value := range freq {
+		powers[i] = value
+		i += 1
+	}
+	return multiGCD(powers)
+}
+
+func GCD(a, b int) int {
+	for b != 0 {
+		t := b
+		b = a % b
+		a = t
+	}
+	return a
+}
+
+func multiGCD(nums []int) int {
+	if len(nums) == 0 {
+		panic("No numbers to take gcd of!")
+	}
+	if len(nums) == 1 {
+		return nums[0]
+	}
+	runningGCD := GCD(nums[0], nums[1])
+	for i := 2; i < len(nums); i++ {
+		runningGCD = GCD(runningGCD, nums[i])
+	}
+	return runningGCD
+}
+
+func sumDigitPower(n, power int) int {
+	s := strconv.Itoa(n)
+	sum := 0
+	for _, letter := range s {
+		digit := int(letter - '0')
+		//fmt.Println(digit)
+		res := 1
+		for i := 0; i < power; i++ {
+			res *= digit
+		}
+		//fmt.Println("bcomes", res)
+		sum += res
+	}
+	return sum
+}
+
 func main() {
-	showPermutations(10)
+
+	fmt.Println(distinctPowers2(5184))
+
+	/*
+		for i := 5184; i < 5185; i++ {
+			fmt.Println("***************************")
+			from2 := distinctPowers2(i)
+			//from2 := 1000
+			fmt.Printf("Working on %d, which has correct value %d\n", i, from2)
+			//fmt.Println(distinctPowers2(i))
+			from3 := distinctPowers3(i)
+			fmt.Println(from3)
+			if from3 == from2 {
+				fmt.Printf("CORRECT! %d\n", from3)
+			} else {
+				fmt.Printf("WRONG! Expected %d, got %d\n", from2, from3)
+				panic("HI")
+			}
+		}
+	*/
+
 }
