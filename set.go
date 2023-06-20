@@ -25,3 +25,7 @@ func (s *Set[K]) Contains(element K) bool {
 func (s Set[K]) String() string {
 	return fmt.Sprintf("%v", s.values)
 }
+
+func (s Set[K]) Size() int {
+	return len(s.values)
+}
