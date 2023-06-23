@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/constraints"
 )
 
@@ -418,7 +419,7 @@ func isAbundant[T constraints.Integer](n T) bool {
 }
 
 func abundants(max int) {
-	abundantNumbers := NewSet[int]()
+	abundantNumbers := mapset.NewSet[int]()
 	for i := 0; i <= max; i++ {
 		if isAbundant(i) {
 			abundantNumbers.Add(i)
@@ -610,7 +611,7 @@ func distinctPowers2(max uint16) int {
 	for i := uint16(2); i <= max; i++ {
 		decomps[i] = NewDecomposedInteger(i)
 	}
-	seen := NewSet[DecomposedInteger]()
+	seen := mapset.NewSet[DecomposedInteger]()
 	seenChannel := make(chan DecomposedInteger)
 	for a := uint16(2); a <= max; a++ {
 		go func(a uint16) {
@@ -638,7 +639,7 @@ func distinctPowers2(max uint16) int {
 	close(seenChannel)
 	// Check to see if anything's still writing to the channel
 	time.Sleep(100 * time.Millisecond)
-	return seen.Size()
+	return seen.Cardinality()
 }
 
 // How many of the 1 to max numbers were *not*
@@ -793,26 +794,48 @@ func sumDigitPower(n, power int) int {
 	return sum
 }
 
-func main() {
+func numberOfCoins(denom int) *big.Int {
+	cache := make(map[int]*big.Int)
+	return numCoins(denom, &cache)
+}
 
-	fmt.Println(distinctPowers2(5184))
+func numCoins(denom int, cache *map[int]*big.Int) *big.Int {
 
-	/*
-		for i := 5184; i < 5185; i++ {
-			fmt.Println("***************************")
-			from2 := distinctPowers2(i)
-			//from2 := 1000
-			fmt.Printf("Working on %d, which has correct value %d\n", i, from2)
-			//fmt.Println(distinctPowers2(i))
-			from3 := distinctPowers3(i)
-			fmt.Println(from3)
-			if from3 == from2 {
-				fmt.Printf("CORRECT! %d\n", from3)
-			} else {
-				fmt.Printf("WRONG! Expected %d, got %d\n", from2, from3)
-				panic("HI")
-			}
+	if denom == 0 {
+		//fmt.Println("      ZEERO")
+		return big.NewInt(0)
+	}
+	coins := []int{1, 2, 5, 10, 20, 50, 100, 200}
+	sum := big.NewInt(0)
+	for _, coin := range coins {
+		if denom < coin {
+			continue
 		}
-	*/
+
+		addition, found := (*cache)[denom-coin]
+
+		if found {
+			//	fmt.Printf("    For coin %d, value %d found in cache %d\n", coin, denom-coin, addition)
+		}
+		if !found {
+			fmt.Printf("    For coin %d, denom %d calling func(%d)\n", coin, denom, denom-coin)
+			addition = numCoins(denom-coin, cache)
+			fmt.Printf("    For value %d, cache is being set to %d\n", denom-coin, addition)
+			var newAddition big.Int
+			newAddition.Set(addition)
+			(*cache)[denom-coin] = &newAddition
+		}
+		sum.Add(sum, big.NewInt(1))
+		sum.Add(sum, addition)
+
+		fmt.Printf("  For coin %d, addition is %d, so sum is %d\n", coin, addition, sum)
+	}
+	fmt.Printf("Asking about %d, answer is %d\n", denom, sum)
+	return sum
+}
+
+func main() {
+	i := 2
+	fmt.Printf("Num ways to do %d: %d\n", i, numberOfCoins(i))
 
 }
