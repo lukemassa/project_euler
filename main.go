@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
 	"math/big"
 	"sort"
 	"strconv"
@@ -29,70 +28,16 @@ func fib(nums chan *big.Int) {
 
 }
 
-func genPrimes(nums chan int64) {
-	nums <- 2
-	nums <- 3
-	for i := int64(6); ; i += 6 {
-		if isPrime(i - 1) {
-			nums <- i - 1
-		}
-		if isPrime(i + 1) {
-			nums <- i + 1
-		}
-	}
+func isIntPalindrome(n int) bool {
+	return isPalindrome(strconv.Itoa(n))
 }
 
-func factor(n int64) []int64 {
-	factors := make([]int64, 0)
-	for {
-		factor := nextFactor(n)
-		if factor == -1 {
-			factors = append(factors, n)
-			return factors
-		}
-		factors = append(factors, factor)
-		n = n / factor
-	}
-}
-
-func divisors[T constraints.Integer](n T) []T {
-	divisors := make([]T, 0)
-	for i := T(1); i < n; i++ {
-		if n%i == 0 {
-			divisors = append(divisors, i)
-		}
-
-	}
-	return divisors
-}
-
-func isPrime(n int64) bool {
-	if n < 2 {
-		return false
-	}
-	factor := nextFactor(n)
-	return factor == -1
-}
-
-func nextFactor(n int64) int64 {
-	//fmt.Printf("Working on %d\n", n)
-	max := int64(math.Sqrt(float64(n)))
-	for i := int64(2); i <= max; i++ {
-		if n%i == 0 {
-			//fmt.Printf("   Found %d\n", i)
-			return i
-		}
-	}
-	return -1
-}
-
-func isPalindrome(n int) bool {
-	numAsStr := strconv.Itoa(n)
-	strLen := len(numAsStr)
+func isPalindrome(s string) bool {
+	strLen := len(s)
 	//fmt.Printf("Starting on %s, which is %d long\n", numAsStr, strLen)
 	for i := 0; i < strLen/2; i++ {
 		//fmt.Printf("   Comparing %c and %c\n", numAsStr[i], numAsStr[strLen-1-i])
-		if numAsStr[i] != numAsStr[strLen-1-i] {
+		if s[i] != s[strLen-1-i] {
 			return false
 		}
 	}
@@ -127,32 +72,6 @@ func getFreq[T comparable](sortedList []T) map[T]int {
 	}
 
 	return freq
-}
-
-func numDivisors(n int64) int {
-	// Special case; 1 doesn't have any prime factors so the below calculation won't work
-	if n == 1 {
-		return 1
-	}
-	ret := 1
-	factors := factor(n)
-	for _, freq := range getFreq(factors) {
-		// Each prime contributes 0, 1, ..., p to a given divisor
-		ret *= freq + 1
-	}
-	return ret
-}
-
-func sumDivisors[T constraints.Integer](n T) T {
-	return sum(divisors(n))
-}
-func sum[T constraints.Integer](arr []T) T {
-	// Special case; 1 doesn't have any prime factors so the below calculation won't work
-	var sum T
-	for i := 0; i < len(arr); i++ {
-		sum += arr[i]
-	}
-	return sum
 }
 
 func adjDigits(digits string, chanDigits chan [gridNums]int) {
@@ -400,9 +319,10 @@ func dedupe[T comparable](x []T) []T {
 	return ret
 }
 
-func factorial(n int64) *big.Int {
+func bigFactorial(n int64) *big.Int {
 	if n < 0 {
 		log.Fatalf("Can't get factorial of neg num %d", n)
+		return nil
 	}
 	if n < 2 {
 		return big.NewInt(1)
@@ -410,6 +330,22 @@ func factorial(n int64) *big.Int {
 	ret := big.NewInt(1)
 	for i := int64(2); i <= n; i++ {
 		ret.Mul(ret, big.NewInt(i))
+	}
+	return ret
+}
+func factorial(n int) int64 {
+	if n < 0 {
+		panic(fmt.Sprintf("Can't get factorial of neg num %d", n))
+	}
+	if n < 2 {
+		return 1
+	}
+	if n > 20 {
+		panic(fmt.Sprintf("Can't get factorial of num %d, try using bigFactorial", n))
+	}
+	ret := int64(1)
+	for i := int64(2); i <= int64(n); i++ {
+		ret *= i
 	}
 	return ret
 }
@@ -569,17 +505,7 @@ func unitReciprocalCycles(n int) int {
 		numerator = remainder
 	}
 }
-func numPrimesPolynomial(a, b int64) int64 {
-	for n := int64(0); ; n++ {
-		val := n*n + a*n + b
-		if val < 2 {
-			return n
-		}
-		if !isPrime(val) {
-			return n
-		}
-	}
-}
+
 func distinctPowers(maxInt int64) int {
 	sofar := make([]big.Int, 0)
 	one := big.NewInt(1)
@@ -834,8 +760,113 @@ func numCoins(denom int, cache *map[int]*big.Int) *big.Int {
 	return sum
 }
 
+func isPowerTwo(n uint64) bool {
+	if n == 0 {
+		return false
+	}
+	for n > 1 {
+		// if n is odd
+		if n&1 != 0 {
+			return false
+		}
+		n = n >> 1
+	}
+	return true
+}
+func getDigits(i int) []int {
+	digitsAsString := strconv.Itoa(i)
+	numDigits := len(digitsAsString)
+	digits := make([]int, numDigits)
+	for i := 0; i < numDigits; i++ {
+		digits[i] = int(digitsAsString[i] - '0')
+	}
+	return digits
+}
+func rotate(i int) []int {
+
+	digits := getDigits(i)
+	numDigits := len(digits)
+
+	ret := make([]int, numDigits)
+	for i := 0; i < numDigits; i++ {
+		value := 0
+		power := 1
+		for k := 0; k < numDigits; k++ {
+			position := (i + k) % numDigits
+			value += digits[position] * power
+			power *= 10
+		}
+
+		ret[i] = value
+	}
+	return ret
+
+}
+
+func base2Representation(n int) string {
+	if n == 0 {
+		return "0"
+	}
+	digits := make([]bool, 0)
+	for n > 0 {
+		digits = append(digits, n&1 == 0)
+		n /= 2
+	}
+	ret := strings.Builder{}
+	for i := len(digits) - 1; i >= 0; i-- {
+		if digits[i] {
+			ret.WriteRune('0')
+		} else {
+			ret.WriteRune('1')
+		}
+	}
+	return ret.String()
+}
+
 func main() {
-	i := 2
-	fmt.Printf("Num ways to do %d: %d\n", i, numberOfCoins(i))
+	sum := 0
+	found := 0
+	for i := 11; found < 11; i += 2 {
+		allPrime := true
+		digits := getDigits(i)
+		numDigits := len(digits)
+		for j := 0; j < numDigits; j++ {
+			newNum := 0
+			power := 1
+			for k := numDigits - 1 - j; k >= 0; k-- {
+				newNum += power * digits[k]
+				power *= 10
+			}
+			if !isPrime(int64(newNum)) {
+				allPrime = false
+				break
+			}
+		}
+		if !allPrime {
+			continue
+		}
+
+		for j := 0; j < numDigits; j++ {
+			newNum := 0
+			power := 1
+			for k := numDigits - 1; k >= j; k-- {
+				newNum += power * digits[k]
+				power *= 10
+			}
+			//fmt.Printf("  %d\n", newNum)
+			if !isPrime(int64(newNum)) {
+				allPrime = false
+				break
+			}
+		}
+		if !allPrime {
+			continue
+		}
+		found += 1
+		fmt.Println(digits)
+		sum += i
+
+	}
+	fmt.Println(sum)
 
 }
