@@ -822,51 +822,45 @@ func base2Representation(n int) string {
 	}
 	return ret.String()
 }
+func getDigitLength(n int) int {
+	if n < 10 {
+		return 1
+	}
+	if n < 100 {
+		return 2
+	}
+	if n < 1000 {
+		return 3
+	}
+	if n < 10_000 {
+		return 4
+	}
+	if n < 100_000 {
+		return 5
+	}
+	if n < 1_000_000 {
+		return 6
+	}
+	if n < 10_000_000 {
+		return 7
+	}
+	panic(fmt.Sprintf("can't handle %d", n))
+}
 
 func main() {
-	sum := 0
-	found := 0
-	for i := 11; found < 11; i += 2 {
-		allPrime := true
-		digits := getDigits(i)
-		numDigits := len(digits)
-		for j := 0; j < numDigits; j++ {
-			newNum := 0
-			power := 1
-			for k := numDigits - 1 - j; k >= 0; k-- {
-				newNum += power * digits[k]
-				power *= 10
-			}
-			if !isPrime(int64(newNum)) {
-				allPrime = false
-				break
-			}
+
+	products := make([]int, 10)
+	for i := 0; i < 1_000_000; i++ {
+		n := 0
+		digitLength := 0
+		for digitLength < 9 {
+			products[n] = (n + 1) * i
+			digitLength += getDigitLength(products[n])
+			n += 1
 		}
-		if !allPrime {
+		if digitLength != 9 {
 			continue
 		}
-
-		for j := 0; j < numDigits; j++ {
-			newNum := 0
-			power := 1
-			for k := numDigits - 1; k >= j; k-- {
-				newNum += power * digits[k]
-				power *= 10
-			}
-			//fmt.Printf("  %d\n", newNum)
-			if !isPrime(int64(newNum)) {
-				allPrime = false
-				break
-			}
-		}
-		if !allPrime {
-			continue
-		}
-		found += 1
-		fmt.Println(digits)
-		sum += i
-
+		fmt.Println(i, products[:n])
 	}
-	fmt.Println(sum)
-
 }
