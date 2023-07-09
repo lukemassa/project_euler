@@ -822,6 +822,31 @@ func base2Representation(n int) string {
 	}
 	return ret.String()
 }
+
+func hasUniqueDigits(expectedLength int, num ...int) bool {
+	seen := make(map[byte]struct{})
+	length := 0
+	for k := 0; k < len(num); k++ {
+		digits := strconv.Itoa(num[k])
+		length += len(digits)
+
+		for i := 0; i < len(digits); i++ {
+			if digits[i] == '0' {
+				return false
+			}
+			_, found := seen[digits[i]]
+			if found {
+				return false
+			}
+			seen[digits[i]] = struct{}{}
+		}
+	}
+	if expectedLength != -1 && length != expectedLength {
+		return false
+	}
+	return true
+}
+
 func getDigitLength(n int) int {
 	if n < 10 {
 		return 1
