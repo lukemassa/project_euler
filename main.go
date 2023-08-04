@@ -871,21 +871,25 @@ func getDigitLength(n int) int {
 	}
 	panic(fmt.Sprintf("can't handle %d", n))
 }
+func findTriangleTriples(sum int) int {
+	numSolutions := 0
+	for a := 1; a <= sum/3; a++ {
+		for b := a; b <= (sum-a)/2; b++ {
+			c := sum - (a + b)
+			if !(a <= b && b <= c) {
+				fmt.Printf("Not true that %d<=%d<=%d\n", a, b, c)
+			}
+			if a*a+b*b != c*c {
+				continue
+			}
+			//fmt.Println(a, b, c)
+			numSolutions += 1
+		}
+	}
+	return numSolutions
+}
 
 func main() {
+	fmt.Printf("%x", "\u00B5")
 
-	products := make([]int, 10)
-	for i := 0; i < 1_000_000; i++ {
-		n := 0
-		digitLength := 0
-		for digitLength < 9 {
-			products[n] = (n + 1) * i
-			digitLength += getDigitLength(products[n])
-			n += 1
-		}
-		if digitLength != 9 {
-			continue
-		}
-		fmt.Println(i, products[:n])
-	}
 }
