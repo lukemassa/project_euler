@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/big"
 
 	"golang.org/x/exp/constraints"
 )
@@ -49,6 +50,9 @@ func isPrime(n int64) bool {
 	}
 	factor := nextFactor(n)
 	return factor == -1
+}
+func fasterIsPrime(n int64) bool {
+	return big.NewInt(n).ProbablyPrime(0)
 }
 
 func nextFactor(n int64) int64 {

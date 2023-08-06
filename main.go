@@ -889,7 +889,38 @@ func findTriangleTriples(sum int) int {
 	return numSolutions
 }
 
-func main() {
-	fmt.Printf("%x", "\u00B5")
+func numNDigintNumbers(n int) int {
+	power := 1
+	for i := 1; i < n; i++ {
+		power *= 10
+	}
+	return 9 * power
+}
 
+func nthDigitOfConcatenatedDecimal(n int) int {
+	// First, determine digit length block where n is
+	digitLength := 1
+	startDigitBlock := 1
+	digitLengthSize := 1
+	for {
+		nextStartDigitBlock := startDigitBlock + numNDigintNumbers(digitLength)*digitLength
+		if nextStartDigitBlock > n {
+			break
+		}
+		digitLength += 1
+		digitLengthSize *= 10
+		startDigitBlock = nextStartDigitBlock
+
+	}
+	//return startDigitBlock, digitLength
+	entryInBlock := (n - startDigitBlock) / digitLength
+	startingPoint := entryInBlock*digitLength + startDigitBlock
+	entry := digitLengthSize + entryInBlock
+	entryAsString := strconv.Itoa(entry)
+	digit := int(entryAsString[n-startingPoint] - '0')
+	return digit
+}
+
+func main() {
+	fmt.Println(nthDigitOfConcatenatedDecimal(922337203685477580))
 }
