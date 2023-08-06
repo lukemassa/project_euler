@@ -15,8 +15,6 @@ import (
 
 const gridNums = 4
 
-const numElementsPermutation = 4
-
 func fib(nums chan *big.Int) {
 	i := big.NewInt(0)
 	j := big.NewInt(1)
